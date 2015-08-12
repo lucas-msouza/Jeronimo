@@ -15,40 +15,62 @@ local scene = composer.newScene()
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local btnTryAgainFile = "assets/btnTryAgain.png"
+local btnMenuFile = "assets/btnMenu.png"
 
 ---------------------------------------------------------------------------------
 
--- Variáveis
+-- Objetos
+
+local backGround
+local txtPause 
+local btnTryAgain
+local btnMenu
 
 ---------------------------------------------------------------------------------
 
-function clearUp( )
-
-end
-
-function ReloadGame( )
+local function ReloadGame( )
 	
 	composer.removeScene( "screens.game", true )
 	composer.gotoScene( "screens.game" , "fade", 400 )
 end
 
+local function ClearUp( )
+
+	btnTryAgain:removeEventListener( "tap", ReloadGame )
+	btnMenu:removeEventListener( "tap", GoToMenu )
+
+end
+
+local function GoToMenu( )
+
+	btnTryAgain:removeEventListener( "tap", ReloadGame )
+	btnMenu:removeEventListener( "tap", GoToMenu )
+	
+	composer.gotoScene( "screens.menu" , "fade", 400 )
+end
+
+----------------------------------------------------------------------------------
+
 function scene:create( event )
 
 	local sceneGroup = self.view
 
-	local backGround = display.newRect( centerX, centerY, 380, 570 )
+	backGround = display.newRect( centerX, centerY, 380, 570 )
 	backGround:setFillColor( 0.5 )
 	backGround.alpha = 0.5
 	sceneGroup:insert( backGround )
 
-	local txtPause = display.newText( "Era só não bate \n na nuvem -.-\" ", centerX , 100, "Arial", 30 )
+	txtPause = display.newText( "Era só não bate \n na nuvem -.-\" ", centerX , 100, "Arial", 30 )
 	sceneGroup:insert( txtPause )
 
-	local btnTryAgain = display.newImage( btnTryAgainFile, centerX, 400 )
+	btnTryAgain = display.newImage( btnTryAgainFile, centerX - 50, 400 )
 	sceneGroup:insert( btnTryAgain )
 
-	btnTryAgain:addEventListener( "tap", ReloadGame )
+	btnMenu = display.newImage( btnMenuFile,  centerX + 50, 400  )
+	sceneGroup:insert( btnMenu )
 
+	btnTryAgain:addEventListener( "tap", ReloadGame )
+	btnMenu:addEventListener( "tap", GoToMenu )
 
 end
 
@@ -66,8 +88,6 @@ function scene:hide( event )
 	local phase = event.phase
 	
 	if event.phase == "will" then
-
-			clearUp()
 
 	elseif phase == "did" then
 		

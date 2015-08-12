@@ -15,6 +15,7 @@ local scene = composer.newScene()
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
 local btnContinueFile = "assets/btnContinue.png"
+local btnMenuFile = "assets/btnMenu.png"
 
 ---------------------------------------------------------------------------------
 
@@ -22,12 +23,12 @@ local btnContinueFile = "assets/btnContinue.png"
 
 ---------------------------------------------------------------------------------
 
-function clearUp( )
-
+local function Continue( )
+	composer.hideOverlay( "fade", 400 )
 end
 
-function Continue( )
-	composer.hideOverlay( "fade", 400 )
+local function GoToMenu( )
+	composer.gotoScene( "screens.menu" , "fade", 400 )
 end
 
 function scene:create( event )
@@ -42,10 +43,14 @@ function scene:create( event )
 	local txtPause = display.newText( "Paused", centerX , 100, "Arial", 30 )
 	sceneGroup:insert( txtPause )
 
-	local btnContinue = display.newImage( btnContinueFile, centerX, 400 )
+	local btnContinue = display.newImage( btnContinueFile, centerX - 50, 400 )
 	sceneGroup:insert( btnContinue )
 
+	local btnMenu = display.newImage( btnMenuFile,  centerX + 50, 400  )
+	sceneGroup:insert( btnMenu )
+
 	btnContinue:addEventListener( "tap", Continue )
+	btnMenu:addEventListener( "tap", GoToMenu )
 
 end
 
@@ -61,10 +66,11 @@ end
 function scene:hide( event )
 
 	local phase = event.phase
+	local parent = event.parent
 	
 	if phase == "will" then
 
-			clearUp()
+		parent:ResumeGame( )
 
 	elseif phase == "did" then
 		

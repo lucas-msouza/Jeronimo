@@ -12,7 +12,7 @@ local widget = require( "widget" )
 
 function StartGame( event )
 
-	composer.gotoScene(  "screens.game", "crossFade", 1000 )
+	composer.gotoScene( "screens.game", "fade", 200 )
 
 	return true
 
@@ -52,7 +52,11 @@ function scene:show( event )
 	local phase = event.phase
 	
 	if phase == "will" then
-		 -- composer.removeScene( "screens.logo" )
+
+		composer.removeScene( "screens.logo" )
+		composer.removeScene( "screens.game", true )
+		composer.removeScene( "screens.gameOver", true )
+
 	elseif phase == "did" then
 
 	end	

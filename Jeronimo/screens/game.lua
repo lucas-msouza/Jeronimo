@@ -47,6 +47,7 @@ local btnPause
 
 ----------------------------------------------------------------------------------
 -- Funcões
+
 local function Move(event)
 
 	if(event.phase == "moved") then
@@ -174,6 +175,9 @@ end
 
 local function Pause ( )
 	
+	Runtime:removeEventListener("enterFrame", MoveEnemies)
+
+
 	local options = {
 	isModal = true,
 	effect = "fade",
@@ -186,18 +190,9 @@ local function Pause ( )
 
 end
 
-function GameOver( )
-
-	sheep:removeSelf( )
-	sheep = nil
-	Runtime:removeEventListener("touch", Move)
-	Runtime:removeEventListener( "enterFrame", checkingCollisions )
-	Runtime:removeEventListener( "enterFrame", MoveEnemies )
-	Runtime:removeEventListener( "enterFrame", ValidateCanMove )
-	btnPause:removeEventListener( "tap", Pause )
-
+local function GameOver( )
+	
 	composer.gotoScene( "screens.gameOver", "fade", 400 )
-
 
 end
 
@@ -214,6 +209,19 @@ local function checkingCollisions( )
 
 	isCheckingCollisions = false
 	
+end
+
+
+local function ClearUp( )
+
+	sheep:removeSelf( )
+	sheep = nil
+	Runtime:removeEventListener("touch", Move)
+	Runtime:removeEventListener( "enterFrame", checkingCollisions )
+	Runtime:removeEventListener( "enterFrame", MoveEnemies )
+	Runtime:removeEventListener( "enterFrame", ValidateCanMove )
+	btnPause:removeEventListener( "tap", Pause )
+
 end
 
 
@@ -271,15 +279,20 @@ function scene:hide( event )
 	
 	if event.phase == "will" then
 	
+	ClearUp()
+
 	elseif phase == "did" then
 		
 	end	
 end
 
-
 function scene:destroy( event )
 	local sceneGroup = self.view
 
+end
+
+function scene:ResumeGame( )
+	Runtime:addEventListener( "enterFrame", MoveEnemies )
 end
 
 ---------------------------------------------------------------------------------

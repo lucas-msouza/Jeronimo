@@ -10,7 +10,7 @@ local scene = composer.newScene()
 ---------------------------------------------------------------------------------
 
 function changeScene()
-	composer.gotoScene( "screens.menu", "fade", 500)
+	composer.gotoScene( "screens.menu", "fade", 200)
 end
 
 function clearUp( )
@@ -38,7 +38,7 @@ function scene:show( event )
 	
 	if phase == "did" then
 
-		timer.performWithDelay( 1, changeScene, 1 )    
+		changeScene()
 	
 	end	
 end
