@@ -59,7 +59,7 @@ function scene:show( event )
 	local phase = event.phase
 	
 	if phase == "did" then
-	
+		system.setIdleTimer( true )
 	end	
 end
 
@@ -69,7 +69,8 @@ function scene:hide( event )
 	local parent = event.parent
 	
 	if phase == "will" then
-
+		
+		system.setIdleTimer( false )
 		parent:ResumeGame( )
 
 	elseif phase == "did" then

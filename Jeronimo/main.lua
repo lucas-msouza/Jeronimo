@@ -5,6 +5,7 @@
 -----------------------------------------------------------------------------------------
 
 display.setStatusBar( display.HiddenStatusBar)
+system.setIdleTimer( false )
 
 local composer = require "composer"
 

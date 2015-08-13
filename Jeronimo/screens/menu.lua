@@ -4,9 +4,18 @@
 --
 ----------------------------------------------------------------------------------
 
+-- Bibliotecas
+
 local composer = require( "composer" )
 local scene = composer.newScene()
 local widget = require( "widget" )
+
+----------------------------------------------------------------------------------
+
+-- Constantes
+
+local centerX, centerY = display.contentCenterX, display.contentCenterY
+local _H, _W = display.contentHeight, display.contentWidth
 
 ---------------------------------------------------------------------------------
 
@@ -22,13 +31,10 @@ function scene:create( event )
 
 	local sceneGroup = self.view
 
-	local centerX = display.contentCenterX
-	local centerY = display.contentCenterY
-
 	local sky = display.newRect( centerX, centerY, 380, 570 )
 	sky:setFillColor(0.5, 0.8, 1)
 
-	local title = display.newText("Jeronimo", centerX, 0 , "Arial", 60)
+	local title = display.newText("Jeronimo", centerX, 40 , "Arial", 60)
 
 	local btnStart = widget.newButton
 	{
@@ -38,7 +44,7 @@ function scene:create( event )
 	}
 
 	btnStart.x = centerX
-	btnStart.y = 400
+	btnStart.y = _H - 100
 
 	sceneGroup:insert(sky)
 	sceneGroup:insert(title)

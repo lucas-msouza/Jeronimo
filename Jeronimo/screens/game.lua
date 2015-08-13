@@ -4,23 +4,22 @@
 --
 ----------------------------------------------------------------------------------
 -- Bibliotecas
-local physics = require("physics")
+
 local composer = require( "composer" )
 local scene = composer.newScene()
 
-physics.start()
 ----------------------------------------------------------------------------------
 -- Constantes
 local centerX, centerY = display.contentCenterX, display.contentCenterY
 local _H, _W = display.contentHeight, display.contentWidth
 local sqrt = math.sqrt
--- local oneBlock = display.contentWidth/3
--- local left = oneBlock * 0.5
--- local center = oneBlock + left
--- local right = oneBlock * 2 + left
-local left = 53
-local center = 160
-local right = 267
+local ceil = math.ceil
+local random = math.random
+local oneBlock = display.contentWidth/3
+local left = ceil( oneBlock * 0.5 )
+local center = ceil( oneBlock + left )
+local right = ceil ( oneBlock * 2 + left )
+local score = 0
 
 local _DeadZone = 20
 
@@ -28,22 +27,26 @@ local sheepFile = "assets/sheep.png"
 local stickerFile = "assets/sticker.png"
 local btnPauseFile = "assets/btnPause.png"
 
+local enemieSpeedS = 2
+local enemieSpeedM = 4
+local enemieSpeedF = 6
+
 ---------------------------------------------------------------------------------
 -- Variáveis
 
 local x1, x2
 local direction
-local canMove = true
-local isCheckingCollisions = false
+local canMove
+local isCheckingCollisions
+local score
 
 ---------------------------------------------------------------------------------
 	-- Objetos
 
 local sky 
 local sheep 
-local sticker 
-local enemie1 
 local btnPause
+local enemies = {}
 
 ----------------------------------------------------------------------------------
 -- Funcões
@@ -72,7 +75,7 @@ local function Move(event)
 		
 			--Direita
 			elseif (x2 > x1 and (x2 - x1 > _DeadZone)) then
-				
+
 				if(sheep.x == left) then
 					-- sheep.x = center
 					canMove = false
@@ -96,28 +99,16 @@ local function ValidateCanMove( event )
 	end
 
 	if(sheep.x == left or sheep.x == center or sheep.x == right) then
+
 		canMove = true
 	end
 
 end
 
-local int =2
-local int1 = 4
-local function MoveEnemies( event )
-	
-	sticker.x = sticker.x + int
-	enemie1.y = enemie1.y + int1
+local function MoveEnemies( )
 
-	if ( sticker.x > _W ) then
-		int = int * -1
-	elseif ( sticker.x < 0 ) then
-		int = int * -1
-	end
-
-	if ( enemie1.y > _H ) then 
-		int1 = int1 * -1
-	elseif ( enemie1.y < 0 ) then
-		int1 = int1 * -1
+	for i=1, #enemies do
+		enemies[i].y = enemies[i].y - enemieSpeedF
 	end
 
 end
@@ -173,22 +164,6 @@ local function hasCollidedCircle(obj1, obj2)
 	
 end
 
-local function Pause ( )
-	
-	Runtime:removeEventListener("enterFrame", MoveEnemies)
-
-
-	local options = {
-	isModal = true,
-	effect = "fade",
-	time = 400
-	}
-
-	composer.showOverlay( "screens.pause", options)
-
-	return true
-
-end
 
 local function GameOver( )
 	
@@ -203,8 +178,13 @@ local function checkingCollisions( )
 	end
 
 	isCheckingCollisions = true
-	if hasCollidedCircle(enemie1, sheep) then 
-		GameOver()
+
+	for i=1, #enemies  do
+		
+		if hasCollidedCircle(enemies[i], sheep) then 
+			GameOver()
+		end
+
 	end
 
 	isCheckingCollisions = false
@@ -212,19 +192,81 @@ local function checkingCollisions( )
 end
 
 
-local function ClearUp( )
 
-	sheep:removeSelf( )
-	sheep = nil
-	Runtime:removeEventListener("touch", Move)
-	Runtime:removeEventListener( "enterFrame", checkingCollisions )
-	Runtime:removeEventListener( "enterFrame", MoveEnemies )
-	Runtime:removeEventListener( "enterFrame", ValidateCanMove )
-	btnPause:removeEventListener( "tap", Pause )
+local function respawnEnemies( )
+	local distance = _H * 0.35
+	local positionY = _H + _H * 0.5
+
+	for i=1, #enemies do
+
+		local xRandom = random(3)
+
+		if xRandom == 1 then
+			enemies[i].x = left
+		elseif xRandom == 2 then
+			enemies[i].x = center
+		else
+			enemies[i].x = right
+		end
+
+		enemies[i].y = positionY
+		positionY = positionY + distance
+
+		enemies[i].isVisible = true
+
+	end
+
 
 end
 
+local function ResetWave( )
 
+	lastEnemie = enemies[10]
+
+	if (lastEnemie.y < -20 ) then
+
+		respawnEnemies()
+		
+	end
+
+
+
+end
+
+local function gameLoop( )
+
+	checkingCollisions( )
+	MoveEnemies( )
+	ValidateCanMove( )
+	ResetWave( )
+
+end
+
+local function Pause ( )
+	
+
+	Runtime:removeEventListener("enterFrame", gameLoop)
+
+
+	local options = {
+	isModal = true,
+	effect = "fade",
+	time = 400
+	}
+
+	composer.showOverlay( "screens.pause", options)
+
+	return true
+
+end
+
+local function ClearUp( )
+
+	Runtime:removeEventListener( "touch", Move )
+	Runtime:removeEventListener("enterFrame", gameLoop)
+	btnPause:removeEventListener( "tap", Pause )
+
+end
 
 ----------------------------------------------------------------------------------
 
@@ -234,31 +276,28 @@ function scene:create( event )
 
 	-- Objetos
 
-	sky = display.newRect( centerX, centerY, 380, 570 )
+	sky = display.newRect( centerX, centerY, _W, _H )
 	sky:setFillColor(0.5, 0.8, 1)
 	sceneGroup:insert(sky)
 
-	sheep =  display.newImage( sheepFile, centerX, centerY )
+	sheep =  display.newImage( sheepFile, center, centerY )
 	sceneGroup:insert(sheep)
 	
-	sticker = display.newImage( stickerFile, 0, 0 )
-	sceneGroup:insert(sticker)
-	
-	enemie1 = display.newImage( stickerFile , left, _H)
-	sceneGroup:insert(enemie1)
-	
-	btnPause = display.newImage( btnPauseFile, 280, 0)
+	--Create Enemies
+
+	for i=1,10 do
+		enemies[i] = display.newImage( stickerFile, 0, 0 )
+		enemies[i].isVisible = false
+		sceneGroup:insert(enemies[i])
+	end
+
+	btnPause = display.newImage( btnPauseFile, _W - 30, 30)
 	sceneGroup:insert(btnPause)
 
-
 	--Eventos
-
-	Runtime:addEventListener( "enterFrame", checkingCollisions )
-	Runtime:addEventListener( "enterFrame", MoveEnemies )
-	Runtime:addEventListener( "enterFrame", ValidateCanMove )
 	Runtime:addEventListener( "touch", Move )
-
 	btnPause:addEventListener( "tap", Pause )
+
 
 end
 
@@ -267,9 +306,19 @@ function scene:show( event )
 	local phase = event.phase
 	
 	if phase == "will" then
-		-- Called when the scene is still off screen and is about to move on screen
+
+	respawnEnemies()
+
 	elseif phase == "did" then
-		
+
+	canMove = true
+	isCheckingCollisions = false
+	score = 0
+
+	-- Eventos
+
+	Runtime:addEventListener( "enterFrame", gameLoop )
+
 	end	
 end
 
@@ -292,7 +341,7 @@ function scene:destroy( event )
 end
 
 function scene:ResumeGame( )
-	Runtime:addEventListener( "enterFrame", MoveEnemies )
+	Runtime:addEventListener( "enterFrame", gameLoop )
 end
 
 ---------------------------------------------------------------------------------

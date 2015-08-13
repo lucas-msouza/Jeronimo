@@ -1,33 +1,16 @@
-application =
-{
+local aspectRatio = display.pixelHeight / display.pixelWidth
 
-	content =
-	{
-		width = 320, --320
-		height = 480, --480
-		scale = "letterBox",
-		fps = 30,
-	
-		
-		--[[
-		imageSuffix =
-		{
-			    ["@2x"] = 2,
-		},
-		--]]
-	},
+application = {
+   content = {
+      width = aspectRatio > 1.5 and 320 or math.ceil( 480 / aspectRatio ),
+      height = aspectRatio < 1.5 and 480 or math.ceil( 320 * aspectRatio ),
+      scale = "letterBox",
+      fps = 30,
 
-	--[[
-	-- Push notifications
-	notification =
-	{
-		iphone =
-		{
-			types =
-			{
-				"badge", "sound", "alert", "newsstand"
-			}
-		}
-	},
-	--]]    
+      -- imageSuffix = {
+      --    ["@2"] = 1.8,
+      --    ["@4"] = 3.6,
+      -- },
+   },
 }
+
