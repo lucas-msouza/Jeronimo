@@ -9,6 +9,7 @@
 local composer = require( "composer" )
 local scene = composer.newScene()
 local widget = require( "widget" )
+local common = require("class.common") 
 
 ----------------------------------------------------------------------------------
 
@@ -19,7 +20,25 @@ local _H, _W = display.contentHeight, display.contentWidth
 
 ---------------------------------------------------------------------------------
 
-function StartGame( event )
+-- Files
+
+local btnPlayFile = "assets/btnStart.png"
+local backGroundFile = "assets/background4.jpg"
+local txtTitleFile = "assets/title5.png"
+
+
+---------------------------------------------------------------------------------
+
+-- Objetos
+
+local backGround 
+local title 
+
+---------------------------------------------------------------------------------
+
+
+
+local function StartGame( event )
 
 	composer.gotoScene( "screens.game", "fade", 200 )
 
@@ -27,29 +46,39 @@ function StartGame( event )
 
 end
 
+
+local function ExitGame( )
+
+	if(system.getInfo("platformName") == "Android") then
+		native.requestExit( )
+	else
+		os.exit( )
+	end
+end
+
+---------------------------------------------------------------------------------
+
 function scene:create( event )
 
 	local sceneGroup = self.view
 
-	local sky = display.newRect( centerX, centerY, 380, 570 )
-	sky:setFillColor(0.5, 0.8, 1)
+	backGround = display.newImage( backGroundFile, centerX, centerY )
 
-	local title = display.newText("Jeronimo", centerX, 40 , "Arial", 60)
+ 	title = display.newImage( txtTitleFile , centerX, 40 )
 
 	local btnStart = widget.newButton
 	{
-		defaultFile = "assets/laserSwitchGreenOff.png",
-		overFile = "assets/laserSwitchGreenOn.png",
-		onRelease = StartGame,
+		defaultFile = btnPlayFile,
+		onRelease = common.btnAnimation,
 	}
 
+	btnStart.action = StartGame
 	btnStart.x = centerX
-	btnStart.y = _H - 100
+	btnStart.y = _H - 150
 
-	sceneGroup:insert(sky)
+	sceneGroup:insert(backGround)
 	sceneGroup:insert(title)
 	sceneGroup:insert(btnStart)
-
 
 end
 

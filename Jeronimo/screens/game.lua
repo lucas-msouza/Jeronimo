@@ -6,10 +6,28 @@
 -- Bibliotecas
 
 local composer = require( "composer" )
+local common = require("class.common") 
+local widget = require( "widget" )
+-- local physics = require( "physics" )
+-- physics.setDrawMode( "hybrid" )
 local scene = composer.newScene()
 
 ----------------------------------------------------------------------------------
 -- Constantes
+
+local sheepFile = "assets/sheep4.png"
+local stickerFile = "assets/sticker.png"
+local btnPauseFile = "assets/btnPause.png"
+local cloud_1File = "assets/cloud_1.png"
+local cloud_2File = "assets/cloud_2.png"
+local cloud_3File = "assets/cloud_3.png"
+local tempest_1File = "assets/tempest_1.png"
+local tempest_2File = "assets/tempest_2.png"
+local tempest_3File = "assets/tempest_3.png"
+local tempest_4File = "assets/tempest_4.png"
+local tempest_5File = "assets/tempest_5.png"
+
+
 local centerX, centerY = display.contentCenterX, display.contentCenterY
 local _H, _W = display.contentHeight, display.contentWidth
 local sqrt = math.sqrt
@@ -18,14 +36,13 @@ local random = math.random
 local oneBlock = display.contentWidth/3
 local left = ceil( oneBlock * 0.5 )
 local center = ceil( oneBlock + left )
-local right = ceil ( oneBlock * 2 + left )
-local score = 0
+local right = ceil( oneBlock * 2 + left )
+local reverse = 1
+local cloudFiles = { cloud_1File, cloud_2File, cloud_3File }
+local tempestFiles = { tempest_1File, tempest_2File, tempest_3File, tempest_4File, tempest_5File}
+local cloudsDensity = 2
 
 local _DeadZone = 20
-
-local sheepFile = "assets/sheep.png"
-local stickerFile = "assets/sticker.png"
-local btnPauseFile = "assets/btnPause.png"
 
 local enemieSpeedS = 2
 local enemieSpeedM = 4
@@ -34,22 +51,44 @@ local enemieSpeedF = 6
 ---------------------------------------------------------------------------------
 -- Variáveis
 
-local x1, x2
+local x1, x2 -- Usado para identificar o sentido do movimento
 local direction
 local canMove
 local isCheckingCollisions
 local score
+local txtScore
+local waveNumber
+local canResetWave
 
 ---------------------------------------------------------------------------------
 	-- Objetos
 
-local sky 
-local sheep 
+local backGround
+local sheep
 local btnPause
 local enemies = {}
+local cloudsBackGroundFirst = {}
+local cloudsBackGroundSecond = {}
+local cloudsGroupFirst = display.newGroup( )
+local cloudsGroupSecond = display.newGroup( )
+
 
 ----------------------------------------------------------------------------------
 -- Funcões
+
+local function AddPhysics( )
+	physics.start( )
+	physics.setGravity( 0, 0 )
+
+	local sheepOutLine = graphics.newOutline(1, sheepFile)
+	physics.addBody( sheep, {outline = sheepOutLine, isSensor =true })
+	
+	local stickerOutLine = graphics.newOutline(1, stickerFile)
+	for i=1,#enemies do
+		physics.addBody( enemies[i] , {outline = stickerOutLine})
+	end
+end
+
 
 local function Move(event)
 
@@ -152,8 +191,8 @@ local function hasCollidedCircle(obj1, obj2)
     local dy =  obj1.y - obj2.y;
  
     local distance = sqrt(dx*dx + dy*dy);	
-    local objectSize = (obj2.contentWidth/2) + (obj1.contentWidth/2)
-
+    local objectSize = (obj2.width/2) + (obj1.width/2)
+    
     if distance < objectSize then
 
         return true
@@ -167,11 +206,12 @@ end
 
 local function GameOver( )
 	
+	transition.cancel()
 	composer.gotoScene( "screens.gameOver", "fade", 400 )
 
 end
 
-local function checkingCollisions( )
+local function CheckingCollisions( )
 
 	if(isCheckingCollisions) then
 		return true
@@ -219,34 +259,157 @@ local function respawnEnemies( )
 
 end
 
+local function DisplayWaveText( num )
+	
+	local tempestText = display.newImage( tempestFiles[num], centerX, centerY)
+	tempestText.display = false
+	tempestText:scale(0, 0) 
+
+	transition.scaleTo( tempestText, { xScale = 1, yScale = 1, time = 1000, 
+	onComplete = function ( )
+		transition.scaleTo( tempestText, { xScale = 0.1, yScale = 0.1, time = 1000, transition = easing.inElastic,
+		onComplete = function ()
+			tempestText:removeSelf( )
+			tempestText = nil
+			respawnEnemies()
+			canResetWave = true
+		end } )
+	end } )
+
+
+end
+
 local function ResetWave( )
 
-	lastEnemie = enemies[10]
+	lastEnemie = enemies[#enemies]
 
-	if (lastEnemie.y < -20 ) then
+	if ( lastEnemie.y < -20 and canResetWave ) then
 
-		respawnEnemies()
+		canResetWave = false
+		waveNumber = waveNumber + 1		
+
+		if(waveNumber == 6) then
+			GameOver()
+		else 
+			DisplayWaveText( waveNumber )
+		end
 		
 	end
 
+end
 
+local function UpdateScore( )
+	
+	for i=1, #enemies do
+		if (enemies[i].y < 0 and enemies[i].isVisible) then
+			enemies[i].isVisible = false
+			score = score + 1
+			txtScore.text = score
+		end
+	end
+end
+
+local function AnimateSheep( )
+
+	if(sheep.anime) then 
+
+		sheep.anime = false
+
+		if(reverse == 0) then
+			transition.to( sheep, { rotation=-45, time=1000, transition=easing.inOutCubic, 
+			onComplete = function() 
+				reverse = 1
+				sheep.anime = true
+			end
+			})
+		else
+			transition.to( sheep, { rotation= 45, time=1000, transition=easing.inOutCubic, 
+			onComplete = function() 
+				reverse = 0
+				sheep.anime = true
+			end
+			})
+		end
+	end
+end
+
+local function AnimateEnemies( )
+
+	for i=1, #enemies  do
+		if(enemies[i].anime) then
+			enemies[i].anime = false
+			if (enemies[i].rotation == 15) then
+				transition.to( enemies[i], { rotation = -15, time = 500, transition = easing.inOutCubic, 
+				onComplete = function ()
+					enemies[i].anime = true
+				end
+				})
+			elseif (enemies[i].rotation == -15) then 
+				transition.to( enemies[i], { rotation = 15, time = 500, transition = easing.inOutCubic,
+				onComplete = function ()
+					enemies[i].anime = true
+				end
+				})
+			end
+		end
+	end
+end
+
+local function MoveBackGround( )
+
+	cloudsGroupFirst.y = cloudsGroupFirst.y - 1
+	cloudsGroupSecond.y = cloudsGroupSecond.y - 1
+
+	if(cloudsGroupFirst.y < -_H) then
+
+		for i=1, #cloudsBackGroundFirst do
+			
+		local randX = random(0, _W)
+		local randY = random(0, _H)
+
+		cloudsBackGroundFirst[i].x = randX
+		cloudsBackGroundFirst[i].y = randY
+
+		end
+
+		cloudsGroupFirst.y = _H + 50
+
+	end
+
+	if(cloudsGroupSecond.y < -_H) then
+
+		for i=1, #cloudsBackGroundSecond do
+		
+		local randX = random(0, _W)
+		local randY = random(0, _H)
+
+		cloudsBackGroundSecond[i].x = randX
+		cloudsBackGroundSecond[i].y = randY
+
+		end
+
+		cloudsGroupSecond.y = _H + 50
+
+	end
 
 end
 
 local function gameLoop( )
 
-	checkingCollisions( )
+	CheckingCollisions( )
 	MoveEnemies( )
+	MoveBackGround( )
+	AnimateSheep( )
+	AnimateEnemies( )
 	ValidateCanMove( )
 	ResetWave( )
+	UpdateScore( )
 
 end
 
 local function Pause ( )
 	
-
 	Runtime:removeEventListener("enterFrame", gameLoop)
-
 
 	local options = {
 	isModal = true,
@@ -263,8 +426,10 @@ end
 local function ClearUp( )
 
 	Runtime:removeEventListener( "touch", Move )
-	Runtime:removeEventListener("enterFrame", gameLoop)
+	Runtime:removeEventListener( "enterFrame", gameLoop )
 	btnPause:removeEventListener( "tap", Pause )
+
+	-- physics.stop( )
 
 end
 
@@ -274,29 +439,63 @@ function scene:create( event )
 
 	local sceneGroup = self.view
 
-	-- Objetos
+	cloudsGroupFirst = display.newGroup( )
+	cloudsGroupSecond = display.newGroup( )
 
-	sky = display.newRect( centerX, centerY, _W, _H )
-	sky:setFillColor(0.5, 0.8, 1)
-	sceneGroup:insert(sky)
+	--Create backGround
+
+	-- backGround = display.newImage( backGroundFile, centerX, centerY )
+	backGround = display.newRect( centerX, centerY, 380, 570 )
+	backGround:setFillColor( 0.5, 0.8, 1 )
+	sceneGroup:insert(backGround)
+
+	for i=1, cloudsDensity do
+
+		local randCloud = random(1, #cloudFiles)
+		local randX = random(0, _W)
+		local randY = random(0, _H)
+
+		cloudsBackGroundFirst[i] = display.newImage( cloudFiles[randCloud] , randX, randY )
+		cloudsBackGroundSecond[i] = display.newImage( cloudFiles[randCloud] , randX, randY )
+
+		cloudsGroupFirst:insert( cloudsBackGroundFirst[i] )
+		cloudsGroupSecond:insert( cloudsBackGroundSecond[i] )
+
+	end
+	cloudsGroupSecond.y = cloudsGroupSecond.y + _H
+	sceneGroup:insert( cloudsGroupFirst )
+	sceneGroup:insert( cloudsGroupSecond )
+
+	--Create Player
 
 	sheep =  display.newImage( sheepFile, center, centerY )
+	sheep.anime = true
 	sceneGroup:insert(sheep)
-	
+
 	--Create Enemies
 
 	for i=1,10 do
-		enemies[i] = display.newImage( stickerFile, 0, 0 )
+		enemies[i] = display.newImage( stickerFile, 100, 100 )
 		enemies[i].isVisible = false
+		enemies[i].rotation = 15
+		enemies[i].anime = true
 		sceneGroup:insert(enemies[i])
 	end
 
-	btnPause = display.newImage( btnPauseFile, _W - 30, 30)
-	sceneGroup:insert(btnPause)
+	--Create UI
+
+	btnPause = widget.newButton{ defaultFile = btnPauseFile, onRelease = common.btnAnimation }
+	btnPause.x = _W - 30
+	btnPause.y = 30
+	btnPause.action = Pause
+
+	 sceneGroup:insert(btnPause)
+
+	txtScore = display.newText( "", center, 30, "Comic Sans MS", 40 )
+	sceneGroup:insert( txtScore )
 
 	--Eventos
 	Runtime:addEventListener( "touch", Move )
-	btnPause:addEventListener( "tap", Pause )
 
 
 end
@@ -307,13 +506,19 @@ function scene:show( event )
 	
 	if phase == "will" then
 
-	respawnEnemies()
+	-- respawnEnemies()
 
 	elseif phase == "did" then
 
+	-- AddPhysics()
+
 	canMove = true
+	canResetWave = false
 	isCheckingCollisions = false
 	score = 0
+	txtScore.text = score
+	waveNumber = 1
+	DisplayWaveText( waveNumber )
 
 	-- Eventos
 

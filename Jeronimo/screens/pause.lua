@@ -7,6 +7,8 @@
 -- Bibliotecas
 
 local composer = require( "composer" )
+local widget = require( "widget" )
+local common = require( "class.common" )
 local scene = composer.newScene()
 
 ---------------------------------------------------------------------------------
@@ -14,8 +16,9 @@ local scene = composer.newScene()
 -- Constantes
 local centerX = display.contentCenterX
 local centerY = display.contentCenterY
-local btnContinueFile = "assets/btnContinue.png"
+local btnPlayFile = "assets/btnPlay.png"
 local btnMenuFile = "assets/btnMenu.png"
+local menuPauseFile = "assets/menuPause.png"
 
 ---------------------------------------------------------------------------------
 
@@ -40,17 +43,21 @@ function scene:create( event )
 	backGround.alpha = 0.5
 	sceneGroup:insert( backGround )
 
-	local txtPause = display.newText( "Paused", centerX , 100, "Arial", 30 )
-	sceneGroup:insert( txtPause )
+	local menuPause = display.newImage( menuPauseFile, centerX, centerY - 15)
+	sceneGroup:insert(menuPause)
 
-	local btnContinue = display.newImage( btnContinueFile, centerX - 50, 400 )
+	local btnContinue = widget.newButton { defaultFile = btnPlayFile, onRelease = common.btnAnimation }
+	btnContinue.x = centerX - 50
+	btnContinue.y = centerY
+	btnContinue.action = Continue
 	sceneGroup:insert( btnContinue )
 
-	local btnMenu = display.newImage( btnMenuFile,  centerX + 50, 400  )
+	local btnMenu = widget.newButton{ defaultFile = btnMenuFile, onRelease = common.btnAnimation }
+	btnMenu.x = centerX + 50
+	btnMenu.y = centerY
+	btnMenu.action = GoToMenu
 	sceneGroup:insert( btnMenu )
 
-	btnContinue:addEventListener( "tap", Continue )
-	btnMenu:addEventListener( "tap", GoToMenu )
 
 end
 
